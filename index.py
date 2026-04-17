@@ -33,7 +33,7 @@ async def chat(data: dict = Body(...)):
     }
 
     payload = {
-        "model": "llama-3.1-70b-versatile",
+        "model": "llama-3.3-70b-versatile",
         "messages": [
             {"role": "system", "content": "Você é um assistente comercial prestativo."},
             {"role": "user", "content": user_message}
