@@ -1,11 +1,11 @@
 import os
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 
 app = FastAPI()
 
-# Configuração de CORS: Permite que o chat funcione em qualquer site
+# Permite que o chat apareça em qualquer site de cliente
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,19 +14,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pega a chave das "Environment Variables" da Vercel
+# --- BANCO DE DADOS DE CLIENTES ---
+# Aqui você gerencia quem pode usar seu serviço
+CLIENTES = {
+    "token-loja-001": {
+        "nome": "PetShop AuAu",
+        "instrucoes": "Você é o atendente do PetShop AuAu. Foque em banho, tosa e rações premium."
+    },
+    "token-loja-002": {
+        "nome": "Advocacia Silva",
+        "instrucoes": "Você é um assistente jurídico formal. Agende consultas e tire dúvidas básicas."
+    },
+    "token-teste": {
+        "nome": "Bot de Teste",
+        "instrucoes": "Você é um assistente genérico e brincalhão."
+    }
+}
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 @app.post("/chat")
 async def chat(data: dict = Body(...)):
+    token_cliente = data.get("token")
     user_message = data.get("message")
-    token = data.get("token")
 
-    # Validação de segurança simples
-    if token != "chave-secreta-do-meu-cliente-001":
-        return {"reply": "Acesso não autorizado."}
+    # 1. Validação do Cliente
+    if token_cliente not in CLIENTES:
+        return {"reply": "Licença inválida ou pagamento pendente."}
 
+    config = CLIENTES[token_cliente]
+
+    # 2. Preparação da pergunta para a Groq
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
@@ -35,14 +54,19 @@ async def chat(data: dict = Body(...)):
     payload = {
         "model": "llama-3.3-70b-versatile",
         "messages": [
-            {"role": "system", "content": "Você é um assistente comercial prestativo."},
+            {"role": "system", "content": config["instrucoes"]},
             {"role": "user", "content": user_message}
         ]
     }
 
     try:
         response = requests.post(GROQ_URL, json=payload, headers=headers)
-        response_data = response.json()
-        return {"reply": response_data['choices'][0]['message']['content']}
+        res_json = response.json()
+        
+        if "choices" in res_json:
+            return {"reply": res_json['choices'][0]['message']['content']}
+        else:
+            return {"reply": "Erro na API da Groq. Verifique saldo ou chave."}
+            
     except Exception as e:
-        return {"reply": "Erro ao processar sua mensagem."}
+        return {"reply": f"Erro interno: {str(e)}"}
