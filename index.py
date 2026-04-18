@@ -17,15 +17,15 @@ app.add_middleware(
 # --- BANCO DE DADOS DE CLIENTES ---
 # Aqui você gerencia quem pode usar seu serviço
 CLIENTES = {
-    "token-loja-001": {
+    os.getenv("LOJA1"): {
         "nome": "PetShop AuAu",
         "instrucoes": "Você é o atendente do PetShop AuAu. Foque em banho, tosa e rações premium."
     },
-    "token-loja-002": {
+    os.getenv("LOJA2"): {
         "nome": "Advocacia Silva",
         "instrucoes": "Você é um assistente jurídico formal. Agende consultas e tire dúvidas básicas."
     },
-    "token-teste": {
+    os.getenv("LOJA3"): {
         "nome": "Bot de Teste",
         "instrucoes": "Você é um assistente genérico e brincalhão."
     }
