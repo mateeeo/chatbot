@@ -18,16 +18,16 @@ app.add_middleware(
 # Aqui você gerencia quem pode usar seu serviço
 CLIENTES = {
     os.getenv("LOJA1"): {
-        "nome": "PetShop AuAu",
+        "nome": "LOJA1",
         "instrucoes": "Você é o atendente do PetShop AuAu. Foque em banho, tosa e rações premium."
     },
     os.getenv("LOJA2"): {
-        "nome": "Advocacia Silva",
+        "nome": "LOJA2",
         "instrucoes": "Você é um assistente jurídico formal. Agende consultas e tire dúvidas básicas."
     },
     os.getenv("LOJA3"): {
-        "nome": "Bot de Teste",
-        "instrucoes": "Você é um assistente genérico e brincalhão."
+        "nome": "LOJA3",
+        "instrucoes": "Você é um bot que dá informações sobre uma Bilioteca Escolar Use os seguintes dados para evitar alucinações: Temos livros, computadores, e-readers e calculadoras oara requesitar. Pode-se utilizar mesas de xadrez e os livros estão classificados conforme a CDU. Se lhe fizerem um pergunta que não se refira a nenhum dado que eu inseri, responda que não sabe, para falar com a professora biblotecária."
     }
 }
 
