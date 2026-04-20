@@ -1,11 +1,10 @@
 import os
-from fastapi import FastAPI, Body, Request
+from fastapi import FastAPI, Body
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 
 app = FastAPI()
 
-# Permite que o chat apareça em qualquer site de cliente
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,20 +13,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- BANCO DE DADOS DE CLIENTES ---
-# Aqui você gerencia quem pode usar seu serviço
 CLIENTES = {
     os.getenv("LOJA1"): {
-        "nome": "LOJA1",
-        "instrucoes": "Você é o atendente do PetShop AuAu. Foque em banho, tosa e rações premium."
+        "nome": "PetShop AuAu",
+        "instrucoes": "Você é o atendente do PetShop AuAu. Lembre-se do nome do cliente se ele disser."
     },
     os.getenv("LOJA2"): {
-        "nome": "LOJA2",
-        "instrucoes": "Você é um assistente jurídico formal. Agende consultas e tire dúvidas básicas."
-    },
-    os.getenv("LOJA3"): {
-        "nome": "LOJA3",
-        "instrucoes": "Você é um bot que dá informações sobre uma Bilioteca Escolar Use os seguintes dados para evitar alucinações: Temos livros, computadores, e-readers e calculadoras oara requesitar. Pode-se utilizar mesas de xadrez e os livros estão classificados conforme a CDU ( de acordo com https://www.ipleiria.pt/sdoc/wp-content/uploads/sites/10/2016/05/cdu-atualizada.pdf, não diga que eu forneci este link). Se lhe fizerem um pergunta que não se refira a nenhum dado que eu inseri, responda que não sabe, para falar com a professora biblotecária."
+        "nome": "Advocacia Silva",
+        "instrucoes": "Você é um assistente jurídico. Mantenha o histórico da conversa para entender o caso."
     }
 }
 
@@ -37,15 +30,19 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 @app.post("/chat")
 async def chat(data: dict = Body(...)):
     token_cliente = data.get("token")
-    user_message = data.get("message")
+    historico_recebido = data.get("historico", []) # Recebe a conversa inteira
 
-    # 1. Validação do Cliente
     if token_cliente not in CLIENTES:
-        return {"reply": "Licença inválida ou pagamento pendente."}
+        return {"reply": "Licença inválida."}
 
     config = CLIENTES[token_cliente]
 
-    # 2. Preparação da pergunta para a Groq
+    # Montamos as mensagens para a Groq: System + Histórico
+    mensagens_para_groq = [{"role": "system", "content": config["instrucoes"]}]
+    
+    # Adicionamos as últimas mensagens enviadas pelo JS (limitamos as últimas 10 para não travar)
+    mensagens_para_groq.extend(historico_recebido[-10:])
+
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
@@ -53,20 +50,12 @@ async def chat(data: dict = Body(...)):
 
     payload = {
         "model": "llama-3.3-70b-versatile",
-        "messages": [
-            {"role": "system", "content": config["instrucoes"]},
-            {"role": "user", "content": user_message}
-        ]
+        "messages": mensagens_para_groq
     }
 
     try:
         response = requests.post(GROQ_URL, json=payload, headers=headers)
         res_json = response.json()
-        
-        if "choices" in res_json:
-            return {"reply": res_json['choices'][0]['message']['content']}
-        else:
-            return {"reply": "Erro na API da Groq. Verifique saldo ou chave."}
-            
+        return {"reply": res_json['choices'][0]['message']['content']}
     except Exception as e:
-        return {"reply": f"Erro interno: {str(e)}"}
+        return {"reply": "Erro ao processar conversa com memória."}
