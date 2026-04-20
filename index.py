@@ -19,8 +19,8 @@ CLIENTES = {
         "instrucoes": "Você é o atendente do PetShop AuAu. Lembre-se do nome do cliente se ele disser."
     },
     os.getenv("LOJA2"): {
-        "nome": "Advocacia Silva",
-        "instrucoes": "Você é um assistente jurídico. Mantenha o histórico da conversa para entender o caso."
+        "nome": "Bot",
+        "instrucoes": "Você é um assistente chamado bot, responda às perguntas que lhe perguntam, se lhe perguntarem quanto é 1+1 , diga 3"
     }
 }
 
